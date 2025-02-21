@@ -1,6 +1,7 @@
 const express = require("express");
 const cors = require("cors");
 const app = express();
+const { ObjectId } = require('mongodb');
 require('dotenv').config();
 const port = process.env.PORT || 5001;
 
@@ -30,6 +31,7 @@ async function run() {
 
 
     const usersCollection = client.db("task-management").collection("users");
+    const tasksCollection = client.db("task-management").collection("tasks");
 
 
             // create user 
@@ -51,6 +53,43 @@ async function run() {
                const user = await usersCollection.findOne({ uid });
                res.json(user);
            });
+
+
+
+
+
+
+                   // post new task
+        app.post("/tasks", async (req, res) => {
+          const task = req.body;
+          task.timestamp = new Date(); 
+          const result = await tasksCollection.insertOne(task);
+          res.json(result);
+      });
+
+      // get all task
+      app.get("/tasks", async (req, res) => {
+          const tasks = await tasksCollection.find().toArray();
+          res.json(tasks);
+      });
+
+      // update task
+      app.put("/tasks/:id", async (req, res) => {
+          const id = req.params.id;
+          const { _id, ...updatedTask } = req.body;  
+          const result = await tasksCollection.updateOne(
+              { _id: new ObjectId(id) },
+              { $set: updatedTask }
+          );
+          res.json(result);
+      });
+
+      //delete api
+      app.delete("/tasks/:id", async (req, res) => {
+          const id = req.params.id;
+          const result = await tasksCollection.deleteOne({ _id: new ObjectId(id) });
+          res.json(result);
+      });
 
 
     // Send a ping to confirm a successful connection
